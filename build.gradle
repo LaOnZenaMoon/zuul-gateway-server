@@ -1,0 +1,63 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.3.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+}
+
+group = 'lozm'
+version = '0.1'
+sourceCompatibility = '1.8'
+
+ext['springCloudVersion'] = 'Hoxton.SR1'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    compileOnly 'org.projectlombok:lombok'
+    compile('org.springframework.retry:spring-retry')
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-zuul')
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-eureka-client')
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task deployDev doLast {
+    ssh.run {
+        session(remotes.prodServer_1) {
+
+            final jarName = "api-gateway-zuul-0.1.jar"
+            println "jar Name: ${jarName}"
+
+            println "File transfer start....."
+            put from: "${project.rootDir}/api-gateway-zuul/build/libs/${jarName}", into: project.properties["prodZuulDir"]
+            execute "cp /home/sysadm/APP/api-gateway-zuul/deploy/${jarName} /home/sysadm/APP/api-gateway-zuul/libs/"
+            println "Make link file....."
+            execute "/home/sysadm/APP/api-gateway-zuul/run.sh makeLinkFile"
+            println "Service restart...."
+            execute "/home/sysadm/APP/api-gateway-zuul/run.sh restart"
+            println "Deploy done!!"
+        }
+    }
+}
