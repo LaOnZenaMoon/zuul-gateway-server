@@ -1,11 +1,12 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: api-gateway-zuul
-  profiles:
-    active: local # 기본 환경 선택
 
-server:
-  port: 8080
+  profiles:
+    active: local
 
 logging:
   level:
